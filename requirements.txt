@@ -3,3 +3,5 @@ pytesseract
 pyautogui
 pynput
 keyboard
+matplotlib
+tensorflow

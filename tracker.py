@@ -1,13 +1,11 @@
 import cv2
-import pytesseract
 import pyautogui
 import time
 import numpy as np
 import csv
 import json
 from datetime import datetime
-from collections import deque, Counter
-import os
+from tensorflow.keras.models import load_model
 
 # Load bounding boxes
 with open("bbox_config.json", "r") as f:
@@ -20,35 +18,60 @@ team1_scores = []
 team2_scores = []
 timestamps = []
 
-# Score history buffer to smooth results
-recent_team1 = deque(maxlen=3)
-recent_team2 = deque(maxlen=3)
+model = load_model("digit_model.h5")
 
-# Create debug output directory
-os.makedirs("debug_scores", exist_ok=True)
-
-def extract_score(image, team_name, timestamp):
+def preprocess_for_contours(image):
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    gray = cv2.bilateralFilter(gray, 9, 75, 75)
+    # Threshold to get binary image
+    _, thresh = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY_INV)  # invert so digits are white
+    return thresh
 
-    # Resize for better OCR performance
-    resized = cv2.resize(gray, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
+def extract_digits_from_contours(score_img):
+    thresh = preprocess_for_contours(score_img)
+    contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-    # Adaptive thresholding
-    thresh = cv2.adaptiveThreshold(
-        resized, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-        cv2.THRESH_BINARY, 11, 2
-    )
+    digit_imgs = []
+    bounding_boxes = []
 
-    # Save debug image
-    debug_filename = f"debug_scores/{team_name}_{timestamp.replace(':', '-')}.png"
-    cv2.imwrite(debug_filename, thresh)
+    for cnt in contours:
+        x, y, w, h = cv2.boundingRect(cnt)
+        # Filter out small noise contours, tweak thresholds as needed
+        if w < 5 or h < 10:
+            continue
+        bounding_boxes.append((x, y, w, h))
 
-    # OCR configuration
-    config = '--oem 3 --psm 7 --dpi 300 -c tessedit_char_whitelist=0123456789'
-    text = pytesseract.image_to_string(thresh, config=config)
-    return ''.join(filter(str.isdigit, text))
+    # Sort bounding boxes left to right
+    bounding_boxes = sorted(bounding_boxes, key=lambda b: b[0])
 
+    for (x, y, w, h) in bounding_boxes:
+        digit_crop = score_img[y:y+h, x:x+w]
+        digit_imgs.append(digit_crop)
+
+    return digit_imgs
+
+def preprocess_digit(digit_img):
+    gray = cv2.cvtColor(digit_img, cv2.COLOR_BGR2GRAY)
+    resized = cv2.resize(gray, (28, 28))
+    normalized = resized / 255.0
+    input_tensor = normalized.reshape(1, 28, 28, 1)
+    return input_tensor
+
+def predict_digit(digit_img):
+    input_tensor = preprocess_digit(digit_img)
+    prediction = model.predict(input_tensor)
+    return np.argmax(prediction)
+
+def extract_score(score_img):
+    digit_imgs = extract_digits_from_contours(score_img)
+    if not digit_imgs:
+        return "0"  # No digits found = 0
+
+    digits_predicted = []
+    for digit_img in digit_imgs:
+        digit = predict_digit(digit_img)
+        digits_predicted.append(str(digit))
+
+    return ''.join(digits_predicted)
 
 try:
     print("Starting score tracking... Press Ctrl+C to stop.")
@@ -63,20 +86,13 @@ try:
 
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        score1 = extract_score(team1_img, "team1", timestamp)
-        score2 = extract_score(team2_img, "team2", timestamp)
+        # Assuming 3 digits max per score; adjust if your UI differs
+        score1 = extract_score(team1_img)
+        score2 = extract_score(team2_img)
+
 
         score1_val = int(score1) if score1.isdigit() else None
         score2_val = int(score2) if score2.isdigit() else None
-
-        # Stabilize scores using majority voting from recent frames
-        if score1_val is not None:
-            recent_team1.append(score1_val)
-            score1_val = Counter(recent_team1).most_common(1)[0][0]
-
-        if score2_val is not None:
-            recent_team2.append(score2_val)
-            score2_val = Counter(recent_team2).most_common(1)[0][0]
 
         timestamps.append(timestamp)
         team1_scores.append(score1_val)
