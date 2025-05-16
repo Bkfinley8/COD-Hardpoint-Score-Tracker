@@ -3,3 +3,6 @@
 /screenshots
 
 score_log.json
+
+*.csv
+*.h5
