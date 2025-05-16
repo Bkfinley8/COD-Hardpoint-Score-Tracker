@@ -6,6 +6,7 @@ import numpy as np
 import csv
 import json
 from datetime import datetime
+import easyocr
 
 # Load bounding boxes
 with open("bbox_config.json", "r") as f:
@@ -18,22 +19,52 @@ team1_scores = []
 team2_scores = []
 timestamps = []
 
+reader = easyocr.Reader(['en'], gpu=False)  # Set gpu=True if you have a compatible GPU
+
+def extract_score_easyocr(image, team_name, timestamp):
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    padded = cv2.copyMakeBorder(gray, 10, 10, 10, 10, cv2.BORDER_CONSTANT, value=0)
+    resized = cv2.resize(padded, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
+
+    result = reader.readtext(resized, detail=1, paragraph=False)
+
+    digits = ''
+    for bbox, text, conf in result:
+        cleaned = ''.join(filter(str.isdigit, text))
+        if cleaned:
+            digits += cleaned
+
+    print(f"[DEBUG][EasyOCR] Extracted: {digits}")
+    return digits
+
 def extract_score(image, team_name, timestamp):
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    resized = cv2.resize(gray, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
+    padded = cv2.copyMakeBorder(gray, 10, 10, 10, 10, cv2.BORDER_CONSTANT, value=0)
+    resized = cv2.resize(padded, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
     _, thresh = cv2.threshold(resized, 150, 255, cv2.THRESH_BINARY)
 
+    # Save debug view
     debug_filename = f"debug_scores/{team_name}_{timestamp.replace(':', '-')}.png"
-    #cv2.imwrite(debug_filename, thresh)
+    cv2.imwrite(debug_filename, thresh)
 
-    config = '--oem 3 --psm 7 --dpi 300 -c tessedit_char_whitelist=0123456789'
-    text = pytesseract.image_to_string(thresh, config=config)
+    # Use image_to_data to get character-wise boxes
+    config = '--oem 3 --psm 7 -c tessedit_char_whitelist=0123456789'
+    data = pytesseract.image_to_data(thresh, config=config, output_type=pytesseract.Output.DICT)
 
-    print(f"[DEBUG] OCR raw output for {team_name} at {timestamp}: '{text}'")
-    digits = ''.join(filter(str.isdigit, text))
-    print(f"[DEBUG] Extracted digits: {digits if digits else 'None'}")
+    digits = []
+    for i in range(len(data['text'])):
+        text = data['text'][i].strip()
+        try:
+            conf = float(data['conf'][i])
+        except:
+            conf = -1
+        if text.isdigit() and conf > 35:
+            digits.append(text)
 
-    return digits
+    joined = ''.join(digits)
+    print(f"[DEBUG] OCR extracted pieces for {team_name}: {digits} => '{joined}'")
+    return joined
+
 
 
 
@@ -50,8 +81,8 @@ try:
 
 
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        score1 = extract_score(team1_img, "team1", timestamp)
-        score2 = extract_score(team2_img, "team2", timestamp)
+        score1 = extract_score_easyocr(team1_img, "team1", timestamp)
+        score2 = extract_score_easyocr(team2_img, "team2", timestamp)
 
 
         score1_val = int(score1) if score1.isdigit() else None
