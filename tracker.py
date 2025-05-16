@@ -1,11 +1,12 @@
 import cv2
+import pytesseract
 import pyautogui
 import time
 import numpy as np
 import csv
 import json
 from datetime import datetime
-from tensorflow.keras.models import load_model
+import easyocr
 
 # Load bounding boxes
 with open("bbox_config.json", "r") as f:
@@ -18,60 +19,54 @@ team1_scores = []
 team2_scores = []
 timestamps = []
 
-model = load_model("digit_model.h5")
+reader = easyocr.Reader(['en'], gpu=False)  # Set gpu=True if you have a compatible GPU
 
-def preprocess_for_contours(image):
+def extract_score_easyocr(image, team_name, timestamp):
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    # Threshold to get binary image
-    _, thresh = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY_INV)  # invert so digits are white
-    return thresh
+    padded = cv2.copyMakeBorder(gray, 10, 10, 10, 10, cv2.BORDER_CONSTANT, value=0)
+    resized = cv2.resize(padded, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
 
-def extract_digits_from_contours(score_img):
-    thresh = preprocess_for_contours(score_img)
-    contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    result = reader.readtext(resized, detail=1, paragraph=False)
 
-    digit_imgs = []
-    bounding_boxes = []
+    digits = ''
+    for bbox, text, conf in result:
+        cleaned = ''.join(filter(str.isdigit, text))
+        if cleaned:
+            digits += cleaned
 
-    for cnt in contours:
-        x, y, w, h = cv2.boundingRect(cnt)
-        # Filter out small noise contours, tweak thresholds as needed
-        if w < 5 or h < 10:
-            continue
-        bounding_boxes.append((x, y, w, h))
+    print(f"[DEBUG][EasyOCR] Extracted: {digits}")
+    return digits
 
-    # Sort bounding boxes left to right
-    bounding_boxes = sorted(bounding_boxes, key=lambda b: b[0])
+def extract_score(image, team_name, timestamp):
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    padded = cv2.copyMakeBorder(gray, 10, 10, 10, 10, cv2.BORDER_CONSTANT, value=0)
+    resized = cv2.resize(padded, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
+    _, thresh = cv2.threshold(resized, 150, 255, cv2.THRESH_BINARY)
 
-    for (x, y, w, h) in bounding_boxes:
-        digit_crop = score_img[y:y+h, x:x+w]
-        digit_imgs.append(digit_crop)
+    # Save debug view
+    #debug_filename = f"debug_scores/{team_name}_{timestamp.replace(':', '-')}.png"
+    # cv2.imwrite(debug_filename, thresh)
 
-    return digit_imgs
+    # Use image_to_data to get character-wise boxes
+    config = '--oem 3 --psm 7 -c tessedit_char_whitelist=0123456789'
+    data = pytesseract.image_to_data(thresh, config=config, output_type=pytesseract.Output.DICT)
 
-def preprocess_digit(digit_img):
-    gray = cv2.cvtColor(digit_img, cv2.COLOR_BGR2GRAY)
-    resized = cv2.resize(gray, (28, 28))
-    normalized = resized / 255.0
-    input_tensor = normalized.reshape(1, 28, 28, 1)
-    return input_tensor
+    digits = []
+    for i in range(len(data['text'])):
+        text = data['text'][i].strip()
+        try:
+            conf = float(data['conf'][i])
+        except:
+            conf = -1
+        if text.isdigit() and conf > 35:
+            digits.append(text)
 
-def predict_digit(digit_img):
-    input_tensor = preprocess_digit(digit_img)
-    prediction = model.predict(input_tensor)
-    return np.argmax(prediction)
+    joined = ''.join(digits)
+    print(f"[DEBUG] OCR extracted pieces for {team_name}: {digits} => '{joined}'")
+    return joined
 
-def extract_score(score_img):
-    digit_imgs = extract_digits_from_contours(score_img)
-    if not digit_imgs:
-        return "0"  # No digits found = 0
 
-    digits_predicted = []
-    for digit_img in digit_imgs:
-        digit = predict_digit(digit_img)
-        digits_predicted.append(str(digit))
 
-    return ''.join(digits_predicted)
 
 try:
     print("Starting score tracking... Press Ctrl+C to stop.")
@@ -84,16 +79,16 @@ try:
         team1_img = frame[team1["y"]:team1["y"]+team1["height"], team1["x"]:team1["x"]+team1["width"]]
         team2_img = frame[team2["y"]:team2["y"]+team2["height"], team2["x"]:team2["x"]+team2["width"]]
 
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        # Assuming 3 digits max per score; adjust if your UI differs
-        score1 = extract_score(team1_img)
-        score2 = extract_score(team2_img)
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        score1 = extract_score_easyocr(team1_img, "team1", timestamp)
+        score2 = extract_score_easyocr(team2_img, "team2", timestamp)
 
 
         score1_val = int(score1) if score1.isdigit() else None
         score2_val = int(score2) if score2.isdigit() else None
 
+        
         timestamps.append(timestamp)
         team1_scores.append(score1_val)
         team2_scores.append(score2_val)
