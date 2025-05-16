@@ -37,8 +37,8 @@ def apply_custom_styling(ax, fig, team1_name, team2_name, map_name, team1_color,
     plt.subplots_adjust(left=0.05, right=0.95, top=0.85, bottom=0.1)
     
     # Title and subtitle
-    fig.text(0.05, 0.92, 'GAME FLOW', color='white', fontsize=24, fontweight='bold')
-    fig.text(0.60, 0.94, f'MAP {map_number} - HARDPOINT: {map_name.upper()}', color='white', fontsize=14)
+    fig.text(0.05, 0.91, 'GAME FLOW', color='white', fontsize=24, fontweight='bold')
+    fig.text(0.71, 0.92, f'MAP {map_number} - HARDPOINT: {map_name.upper()}', color='white', fontsize=14)
 
     # Legend
     legend_elements = [

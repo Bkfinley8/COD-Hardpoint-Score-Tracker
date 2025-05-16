@@ -44,8 +44,8 @@ def extract_score(image, team_name, timestamp):
     _, thresh = cv2.threshold(resized, 150, 255, cv2.THRESH_BINARY)
 
     # Save debug view
-    debug_filename = f"debug_scores/{team_name}_{timestamp.replace(':', '-')}.png"
-    cv2.imwrite(debug_filename, thresh)
+    #debug_filename = f"debug_scores/{team_name}_{timestamp.replace(':', '-')}.png"
+    # cv2.imwrite(debug_filename, thresh)
 
     # Use image_to_data to get character-wise boxes
     config = '--oem 3 --psm 7 -c tessedit_char_whitelist=0123456789'
