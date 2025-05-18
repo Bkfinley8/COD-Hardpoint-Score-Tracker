@@ -7,6 +7,7 @@ import csv
 import json
 from datetime import datetime
 import easyocr
+import subprocess
 
 # Load bounding boxes
 with open("bbox_config.json", "r") as f:
@@ -21,6 +22,20 @@ timestamps = []
 
 reader = easyocr.Reader(['en'], gpu=False)  # Set gpu=True if you have a compatible GPU
 
+
+def run_scripts():
+    try:
+        print("Running data_cleansing.py...")
+        subprocess.run(["python", "data_cleansing.py"], check=True)
+
+        print("Running visualize_scores_styled.py...")
+        subprocess.run(["python", "visualize_scores_styled.py"], check=True)
+
+        print("Both scripts executed successfully.")
+    except subprocess.CalledProcessError as e:
+        print(f"An error occurred while executing {e.cmd}:")
+        print(e)
+
 def extract_score_easyocr(image, team_name, timestamp):
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     padded = cv2.copyMakeBorder(gray, 10, 10, 10, 10, cv2.BORDER_CONSTANT, value=0)
@@ -34,7 +49,7 @@ def extract_score_easyocr(image, team_name, timestamp):
         if cleaned:
             digits += cleaned
 
-    print(f"[DEBUG][EasyOCR] Extracted: {digits}")
+    #print(f"[DEBUG][EasyOCR] Extracted: {digits}")
     return digits
 
 def extract_score(image, team_name, timestamp):
@@ -107,3 +122,4 @@ except KeyboardInterrupt:
             writer.writerow([timestamps[i], team1_scores[i], team2_scores[i]])
 
     print("Saved.")
+    run_scripts()

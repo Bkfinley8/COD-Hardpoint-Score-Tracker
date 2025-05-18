@@ -2,7 +2,8 @@
 /digit_dataset
 /screenshots
 
-score_log.json
+score_log.csv
+todo.md
 
 *.csv
 *.h5

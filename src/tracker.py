@@ -7,7 +7,7 @@ import csv
 import json
 from datetime import datetime
 import easyocr
-import subprocess
+import os
 
 # Load bounding boxes
 with open("bbox_config.json", "r") as f:
@@ -15,26 +15,14 @@ with open("bbox_config.json", "r") as f:
 
 team1 = bbox["team1"]
 team2 = bbox["team2"]
+timer = bbox["timer"]
 
 team1_scores = []
 team2_scores = []
+timer_readings = []
 timestamps = []
 
 reader = easyocr.Reader(['en'], gpu=False)  # Set gpu=True if you have a compatible GPU
-
-
-def run_scripts():
-    try:
-        print("Running data_cleansing.py...")
-        subprocess.run(["python", "data_cleansing.py"], check=True)
-
-        print("Running visualize_scores_styled.py...")
-        subprocess.run(["python", "visualize_scores_styled.py"], check=True)
-
-        print("Both scripts executed successfully.")
-    except subprocess.CalledProcessError as e:
-        print(f"An error occurred while executing {e.cmd}:")
-        print(e)
 
 def extract_score_easyocr(image, team_name, timestamp):
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -49,7 +37,7 @@ def extract_score_easyocr(image, team_name, timestamp):
         if cleaned:
             digits += cleaned
 
-    print(f"[DEBUG][EasyOCR] Extracted: {digits}")
+    #print(f"[DEBUG][EasyOCR] Extracted: {digits}")
     return digits
 
 def extract_score(image, team_name, timestamp):
@@ -93,33 +81,39 @@ try:
         # Crop regions
         team1_img = frame[team1["y"]:team1["y"]+team1["height"], team1["x"]:team1["x"]+team1["width"]]
         team2_img = frame[team2["y"]:team2["y"]+team2["height"], team2["x"]:team2["x"]+team2["width"]]
+        timer_img = frame[timer["y"]:timer["y"]+timer["height"], timer["x"]:timer["x"]+timer["width"]]
+        
 
 
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         score1 = extract_score_easyocr(team1_img, "team1", timestamp)
         score2 = extract_score_easyocr(team2_img, "team2", timestamp)
+        timer_text = extract_score_easyocr(timer_img, "timer", timestamp)
 
 
         score1_val = int(score1) if score1.isdigit() else None
         score2_val = int(score2) if score2.isdigit() else None
+        timer_readings_val = int(timer_text) if timer_text.isdigit() else None
 
         
         timestamps.append(timestamp)
         team1_scores.append(score1_val)
         team2_scores.append(score2_val)
+        timer_readings.append(timer_readings_val)
 
-        print(f"[{timestamp}] Team 1: {score1_val}, Team 2: {score2_val}")
+        print(f"[{timestamp}] Team 1: {score1_val}, Team 2: {score2_val}, Time: {timer_text}")
 
         time.sleep(1)
 
 except KeyboardInterrupt:
     print("\nStopped tracking. Saving results to 'score_log.csv'...")
 
-    with open("score_log.csv", mode="w", newline="") as file:
+    root_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    csv_path = os.path.join(root_path, "score_log.csv")
+    with open(csv_path, mode="w", newline="") as file:
         writer = csv.writer(file)
-        writer.writerow(["Timestamp", "Team 1 Score", "Team 2 Score"])
+        writer.writerow(["Timestamp", "Team 1 Score", "Team 2 Score", "Timer Reading"])
         for i in range(len(timestamps)):
-            writer.writerow([timestamps[i], team1_scores[i], team2_scores[i]])
+            writer.writerow([timestamps[i], team1_scores[i], team2_scores[i],timer_readings[i]])
 
     print("Saved.")
-    run_scripts()

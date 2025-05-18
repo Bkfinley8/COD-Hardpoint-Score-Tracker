@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys
 import json
+import os
 
 from scipy.interpolate import make_interp_spline
 
@@ -11,6 +12,23 @@ def smooth_line(x, y, points=300):
     spline = make_interp_spline(x, y, k=5)
     y_new = spline(x_new)
     return x_new, y_new
+
+
+def resolve_color(color_str, colors_dict):
+    """Resolve a color string from config—either a hex code or named color."""
+    # Normalize string
+    key = color_str.strip()
+    
+    # Remove "Colors." prefix if present
+    if key.startswith("Colors."):
+        key = key.replace("Colors.", "")
+    
+    # If it looks like a hex code, return it directly
+    if key.startswith("#") and len(key) == 7:
+        return key
+    
+    # If it's a named color, look it up
+    return colors_dict.get(key, "#FFFFFF")  # Default to white if not found
 
 
 def apply_custom_styling(ax, fig, team1_name, team2_name, map_name, team1_color, team2_color, map_number, hill_duration, rotation_length):
@@ -22,19 +40,41 @@ def apply_custom_styling(ax, fig, team1_name, team2_name, map_name, team1_color,
     # Grid lines
     ax.grid(axis='y', color='#555555', linestyle='-', linewidth=0.5, alpha=0.7)
     ax.set_axisbelow(True)
-    ax.tick_params(axis='both', which='major', labelsize=10, colors='white')
+    ax.tick_params(axis='both', which='major', labelsize=12, length=8, width=2, colors='white')
     ax.set_ylim(0, 260)
     ax.set_yticks([0, 50, 100, 150, 200, 250])
     start, end = ax.get_xlim()
     num_ticks = int((end - start) // hill_duration) + 1
+
     tick_positions = np.arange(0, num_ticks * hill_duration, hill_duration)
     tick_labels = [f'P{(i % rotation_length) + 1}' for i in range(len(tick_positions))]
+
+    # Offset labels to appear between the tick marks
+    offset_positions = tick_positions + hill_duration / 2
+    # Hide default tick labels
     ax.set_xticks(tick_positions)
-    ax.set_xticklabels(tick_labels, fontsize=10, color='white')
+    ax.set_xticklabels([''] * len(tick_positions))
+
+    # Add custom labels centered between tick marks
+    for i, tick in enumerate(tick_positions[:]):  # Skip last to avoid going off axis
+        label = f'P{(i % rotation_length) + 1}'
+        midpoint = tick + hill_duration / 2
+        ax.text(
+            midpoint,
+            -0.04,  # Move slightly below x-axis in axis-relative coords
+            label,
+            ha='center',
+            va='top',
+            fontsize=12,
+            color='white',
+            transform=ax.get_xaxis_transform(which='grid'),
+            clip_on=False
+        )
+
 
 
     # Adjust position of the plot within the figure to use more horizontal space
-    plt.subplots_adjust(left=0.05, right=0.95, top=0.85, bottom=0.1)
+    plt.subplots_adjust(left=0.06, right=0.95, top=0.85, bottom=0.1)
     
     # Title and subtitle
     fig.text(0.05, 0.91, 'GAME FLOW', color='white', fontsize=24, fontweight='bold')
@@ -55,30 +95,38 @@ def apply_custom_styling(ax, fig, team1_name, team2_name, map_name, team1_color,
         spine.set_visible(False)
 
 def visualize_cod_scores(
-    input_file="cleaned_score_log.csv", 
-    output_file="score_progression.png",
-    config_file="tracker_config.json",
-    dpi=150  # Lower DPI since we're targeting 1920x1080 resolution
+    input_path,
+    output_path,
+    config_path,
+    dpi=150
 ):
-    print(f"Reading data from {input_file}...")
+    print(f"Reading data from {input_path}...")
 
     try:
-        df = pd.read_csv(input_file)
+        df = pd.read_csv(input_path)
     except FileNotFoundError:
-        print(f"Error: File {input_file} not found.")
+        print(f"Error: File {input_path} not found.")
         return
     except Exception as e:
         print(f"Error reading file: {e}")
         return
-    
-    print(f"Reading config from {config_file}...")
+
+    print(f"Reading config from {config_path}...")
 
     try:
-        with open(config_file, 'r') as f:
+        with open(config_path, 'r') as f:
             config = json.load(f)
     except Exception as e:
         print(f"Error reading config file: {e}")
         return
+
+    ...
+    # (rest of the code is unchanged)
+    ...
+
+    # plt.savefig(output_path, dpi=dpi)
+    # print(f"Styled score progression plot saved to {output_path} at {dpi} DPI")
+
     
     map_name = config.get("map_name", "Unknown Map")
     map_settings = config.get("map_settings", {})
@@ -91,8 +139,9 @@ def visualize_cod_scores(
 
     team1_name = team1.get("name", "Team 1")
     team2_name = team2.get("name", "Team 2")
-    team1_color = team1.get("color", "#FF8C42")
-    team2_color = team2.get("color", "white")
+    colors_dict = config.get("Colors", {})
+    team1_color = resolve_color(team1.get("color", "#FF8C42"), colors_dict)
+    team2_color = resolve_color(team2.get("color", "white"), colors_dict)
 
     cols = df.columns.tolist()
     print(f"CSV columns: {cols}")
@@ -126,17 +175,24 @@ def visualize_cod_scores(
         ax.plot(interval_points, df.iloc[interval_points][team2_col], 'o', color=team2_color, 
             markersize=8, markeredgecolor='black', markeredgewidth=1)
 
-    # Set x-axis limits to avoid padding
+
     ax.set_xlim(left=0, right=len(df) - 1)
 
     apply_custom_styling(ax, fig, team1_name, team2_name, map_name, team1_color, team2_color, map_number, hill_duration, rotation_length)
     
-    # No need for tight_layout since we're using subplots_adjust in apply_custom_styling
-    plt.savefig(output_file, dpi=dpi)
+    plt.savefig(output_path, dpi=dpi)
     print(f"Styled score progression plot saved to {output_file} at {dpi} DPI (approx. {int(12.8*dpi)}x{int(7.2*dpi)} pixels)")
 
 if __name__ == "__main__":
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    base_dir = os.path.abspath(os.path.join(script_dir, os.pardir))
+
     input_file = sys.argv[1] if len(sys.argv) > 1 else "cleaned_score_log.csv"
     output_file = sys.argv[2] if len(sys.argv) > 2 else "score_progression.png"
     config_file = sys.argv[3] if len(sys.argv) > 3 else "tracker_config.json"
-    visualize_cod_scores(input_file, output_file, config_file)
+
+    input_path = os.path.join(base_dir, input_file)
+    output_path = os.path.join(base_dir, output_file)
+    config_path = os.path.join(base_dir, config_file)
+
+    visualize_cod_scores(input_path, output_path, config_path)

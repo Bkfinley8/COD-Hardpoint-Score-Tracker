@@ -38,6 +38,11 @@ def main():
     team2_br = get_click_position("BOTTOM-RIGHT of Team 2's score box")
     if not team2_br: return
 
+    timer_tl = get_click_position("TOP-LEFT of the score timer")
+    if not timer_tl: return
+    timer_br = get_click_position("BOTTOM-RIGHT of the score timer")
+    if not timer_br: return
+
     config = {
         "team1": {
             "x": team1_tl[0],
@@ -50,6 +55,12 @@ def main():
             "y": team2_tl[1],
             "width": team2_br[0] - team2_tl[0],
             "height": team2_br[1] - team2_tl[1]
+        },
+        "timer": {
+            "x": timer_tl[0],
+            "y": timer_tl[1],
+            "width": timer_br[0] - timer_tl[0],
+            "height": timer_br[1] - timer_tl[1]
         }
     }
 

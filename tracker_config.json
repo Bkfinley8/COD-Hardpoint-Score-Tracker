@@ -1,14 +1,14 @@
 {
-    "map_name": "Hacienda",
+    "map_name": "Red Card",
     "map_number": 4,
     "hill_duration": 60,
     "team1": {
       "name": "Optic Gaming",
-      "color": "#00FF00"
+      "color": "#123456"
     },
     "team2": {
       "name": "FaZe Clan",
-      "color": "#FF0000"
+      "color": "Middle-Orange"
     },
     "map_settings": {
         "Rewind" : {
@@ -35,6 +35,53 @@
             "hill_duration": 60,
             "rotation_length": 4
         }
+    },
+    "Colors":{
+        "Black": "#000000",
+        "Gray": "#7f7f7f",
+        "White": "#fefefe",
+        "Bottom-Brown": "#793300",
+        "Middle-Brown": "#c15100",
+        "Top-Brown": "#d98a50",
+        "Bottom-Maroon": "#780004",
+        "Middle-Maroon": "#c15100",
+        "Top-Maroon": "#d98a50",
+        "Bottom-Red": "#de0000",
+        "Middle-Red": "#bf1920",
+        "Top-Red": "#ff7089",
+        "Bottom-Orange": "#fa4b00",
+        "Middle-Orange": "#fb804b",
+        "Top-Orange": "#ffb682",
+        "Bottom-Yellow": "#e0af00",
+        "Middle-Yellow": "#fed130",
+        "Top-Yellow": "#ffea7c",
+        "Bottom-Lime": "#46c900",
+        "Middle-Lime": "#8cc66d",
+        "Top-Lime": "#d4fc89",
+        "Bottom-Green": "#005d0e",
+        "Middle-Green": "#178c28",
+        "Top-Green": "#8cfe91",
+        "Bottom-Cyan": "#00b4b4",
+        "Middle-Cyan": "#02feef",
+        "Top-Cyan": "#8afef7",
+        "Bottom-Teal": "#0071a1",
+        "Middle-Teal": "#80a3ff",
+        "Top-Teal": "#b4edff",
+        "Bottom-Blue": "#2c4d94",
+        "Middle-Blue": "#536dec",
+        "Top-Blue": "#73cdff",
+        "Bottom-Royal": "#003880",
+        "Middle-Royal": "#2441d3",
+        "Top-Royal": "#8cb0fe",
+        "Bottom-Indigo": "#56009f",
+        "Middle-Indigo": "#7e00eb",
+        "Top-Indigo": "#b98dff",
+        "Bottom-Purple": "#690075",
+        "Middle-Purple": "#9800cd",
+        "Top-Purple": "#b98dff",
+        "Bottom-Pink": "#ed00e8",
+        "Middle-Pink": "#f25bef",
+        "Top-Pink": "#fdb2ff"
     }
   }
   

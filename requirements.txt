@@ -6,3 +6,4 @@ keyboard
 matplotlib
 easyocr
 pandas
+os
