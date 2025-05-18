@@ -4,6 +4,7 @@
 
 score_log.csv
 todo.md
+cleaned_score_log.csv.ex
 
 *.csv
 *.h5

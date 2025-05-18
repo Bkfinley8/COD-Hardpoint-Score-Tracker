@@ -4,11 +4,11 @@
     "hill_duration": 60,
     "team1": {
       "name": "Optic Gaming",
-      "color": "#123456"
+      "color": "Middle-Purple"
     },
     "team2": {
       "name": "FaZe Clan",
-      "color": "Middle-Orange"
+      "color": "#A2418E"
     },
     "map_settings": {
         "Rewind" : {
