@@ -4,5 +4,4 @@ pyautogui
 pynput
 keyboard
 matplotlib
-tensorflow
 easyocr
