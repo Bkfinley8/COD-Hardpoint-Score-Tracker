@@ -7,3 +7,4 @@ score_log.json
 *.csv
 *.h5
 *.png
+*.json

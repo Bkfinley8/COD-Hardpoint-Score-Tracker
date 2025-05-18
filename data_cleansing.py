@@ -7,8 +7,9 @@ from datetime import datetime
 def clean_cod_hardpoint_data(input_file="score_log.csv", output_file="cleaned_score_log.csv"):
     """
     Clean Call of Duty Hardpoint scoreboard data:
-    1. Truncate data after first 250 or last 249 score
-    2. Smooth data to eliminate outliers and ensure logical score progression
+    1. Remove all data before the last 0,0 reading (match start)
+    2. Truncate data after first 250 or last 249 score
+    3. Smooth data to eliminate outliers and ensure logical score progression
     """
     print(f"Reading data from {input_file}...")
     
@@ -55,6 +56,25 @@ def clean_cod_hardpoint_data(input_file="score_log.csv", output_file="cleaned_sc
         print(f"Team 1 score range: {df[team1_col].min()} - {df[team1_col].max()}")
     if team2_col:
         print(f"Team 2 score range: {df[team2_col].min()} - {df[team2_col].max()}")
+    
+    # Step 0: Find the last occurrence where both teams have a score of 0
+    last_zero_index = -1
+    
+    for i in range(len(df)-1, -1, -1):
+        team1_score = df.iloc[i][team1_col] if team1_col else None
+        team2_score = df.iloc[i][team2_col] if team2_col else None
+        
+        if (pd.notna(team1_score) and team1_score == 0 and 
+            pd.notna(team2_score) and team2_score == 0):
+            last_zero_index = i
+            break
+    
+    # Truncate the dataframe to remove pre-game data
+    if last_zero_index != -1:
+        df = df.iloc[last_zero_index:]
+        print(f"Pre-game data removed: Starting from row {last_zero_index} where last 0,0 score was found")
+    else:
+        print("No 0,0 score found. Using all data.")
     
     # Step 1: Truncate data after first 250 or last 249
     max_score_index = -1
