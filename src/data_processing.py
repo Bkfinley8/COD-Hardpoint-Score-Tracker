@@ -159,7 +159,7 @@ def clean_cod_hardpoint_data():
     df = df.sort_values(by=timestamp_col).drop_duplicates(subset=timestamp_col, keep='last')
 
     # Create a full index of every second between the min and max timestamp
-    full_range = pd.date_range(start=df[timestamp_col].min(), end=df[timestamp_col].max(), freq='S')
+    full_range = pd.date_range(start=df[timestamp_col].min(), end=df[timestamp_col].max(), freq='s')
 
     # Reindex the DataFrame using this full range
     df = df.set_index(timestamp_col).reindex(full_range)

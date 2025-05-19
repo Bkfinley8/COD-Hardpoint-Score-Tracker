@@ -7,3 +7,4 @@ matplotlib
 easyocr
 pandas
 os
+signal

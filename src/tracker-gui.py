@@ -12,6 +12,9 @@ import signal
 import sys
 
 
+STOP_FILE = "stop_flag.txt"
+
+
 def handle_exit_signal(signum, frame):
     save_results_and_exit()
 
@@ -29,7 +32,7 @@ def save_results_and_exit():
         for i in range(len(timestamps)):
             writer.writerow([timestamps[i], team1_scores[i], team2_scores[i], timer_readings[i]])
     print("Saved.", flush=True)
-    sys.exit(0)
+
 
 
 
@@ -96,8 +99,9 @@ def extract_score(image, team_name, timestamp):
 
 
 try:
-    print("Starting score tracking... Press Ctrl+C to stop.", flush=True)
-    while True:
+    print("Starting score tracking... Click 'Stop Tracker' to stop.", flush=True)
+    while not os.path.exists(STOP_FILE):
+        ...
         screenshot = pyautogui.screenshot()
         frame = np.array(screenshot)
         frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
@@ -131,4 +135,8 @@ try:
 
 except KeyboardInterrupt:
     handle_exit_signal(None, None)
+
+
+save_results_and_exit()
+
 

@@ -3,12 +3,12 @@ import pyautogui
 from pynput import mouse
 import keyboard
 
-print("Welcome to the Bounding Box Setup.")
-print("You will be asked to click on screen to define the bounding boxes for Team 1 and Team 2.")
-print("At any point, press ESC to cancel.")
+print("Welcome to the Bounding Box Setup.",flush=True)
+print("You will be asked to click on screen to define the bounding boxes for Team 1 and Team 2.",flush=True)
+print("At any point, press ESC to cancel.",flush=True)
 
 def get_click_position(label):
-    print(f"\n→ Please LEFT-CLICK on the {label}. Press ESC to cancel.")
+    print(f"\n-> Please LEFT-CLICK on the {label}. Press ESC to cancel.",flush=True)
 
     pos = []
 
@@ -20,7 +20,7 @@ def get_click_position(label):
     with mouse.Listener(on_click=on_click) as listener:
         while listener.running:
             if keyboard.is_pressed("esc"):
-                print("Cancelled.")
+                print("Cancelled.",flush=True)
                 listener.stop()
                 return None
         listener.join()
@@ -67,7 +67,7 @@ def main():
     with open("bbox_config.json", "w") as f:
         json.dump(config, f, indent=4)
 
-    print("\n✅ Bounding boxes saved to 'bbox_config.json'.")
+    print("\n✅ Bounding boxes saved to 'bbox_config.json'.",flush=True)
 
 if __name__ == "__main__":
     main()
