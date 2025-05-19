@@ -171,26 +171,24 @@ def visualize_cod_scores(
     x_array = np.array(x_data)
 
     if team1_col:
-        x_tick = interval_points
-        y_tick = df.iloc[interval_points][team1_col].values
-        ax.plot(x_tick, y_tick, linewidth=3, color=team1_color, label=team1_name)
-        ax.plot(x_tick, y_tick, 'o', color=team1_color, markersize=8, markeredgecolor='black', markeredgewidth=1)
-
-        # Annotate values (skipping the first point)
-        for x, y in zip(x_tick[1:], y_tick[1:]):
+        y1 = df[team1_col].values
+        x_smooth, y_smooth = smooth_line(x_array, y1)
+        ax.plot(x_smooth, y_smooth, linewidth=3, color=team1_color, label=team1_name)
+        ax.plot(interval_points, df.iloc[interval_points][team1_col], 'o', color=team1_color, 
+            markersize=8, markeredgecolor='black', markeredgewidth=1)
+        for x, y in zip(interval_points[1:], df.iloc[interval_points[1:]][team1_col]):
             ax.text(x, y + 5, str(int(y)), color='white', fontsize=10, ha='center', va='bottom')
 
         
 
     if team2_col:
-        x_tick = interval_points
-        y_tick = df.iloc[interval_points][team2_col].values
-        ax.plot(x_tick, y_tick, linewidth=3, color=team2_color, label=team2_name)
-        ax.plot(x_tick, y_tick, 'o', color=team2_color, markersize=8, markeredgecolor='black', markeredgewidth=1)
-
-        for x, y in zip(x_tick[1:], y_tick[1:]):
+        y2 = df[team2_col].values
+        x_smooth, y_smooth = smooth_line(x_array, y2)
+        ax.plot(x_smooth, y_smooth, linewidth=3, color=team2_color, label=team2_name)
+        ax.plot(interval_points, df.iloc[interval_points][team2_col], 'o', color=team2_color, 
+            markersize=8, markeredgecolor='black', markeredgewidth=1)
+        for x, y in zip(interval_points[1:], df.iloc[interval_points[1:]][team2_col]):
             ax.text(x, y + 5, str(int(y)), color='white', fontsize=10, ha='center', va='bottom')
-
 
 
 
