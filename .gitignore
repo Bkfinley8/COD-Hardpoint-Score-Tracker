@@ -10,3 +10,4 @@ cleaned_score_log.csv.ex
 *.h5
 *.png
 *.json
+tracker_config.json

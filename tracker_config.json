@@ -1,42 +1,42 @@
 {
-    "map_name": "Red Card",
-    "map_number": 4,
+    "map_name": "Hacienda",
+    "map_number": 1,
     "hill_duration": 60,
     "team1": {
-      "name": "Optic Gaming",
-      "color": "Middle-Purple"
+        "name": "DP Esports",
+        "color": "Bottom-Yellow"
     },
     "team2": {
-      "name": "FaZe Clan",
-      "color": "#A2418E"
+        "name": "Unreal Nightmare",
+        "color": "Bottom Red"
     },
     "map_settings": {
-        "Rewind" : {
+        "Rewind": {
             "hill_duration": 60,
             "rotation_length": 5
         },
-        "Red Card" : {
+        "Red Card": {
             "hill_duration": 60,
             "rotation_length": 5
         },
-        "Protocol" : {
+        "Protocol": {
             "hill_duration": 60,
             "rotation_length": 4
         },
-        "Skyline" : {
+        "Skyline": {
             "hill_duration": 60,
             "rotation_length": 4
         },
-        "Vault" : {
+        "Vault": {
             "hill_duration": 60,
             "rotation_length": 4
         },
-        "Hacienda" : {
+        "Hacienda": {
             "hill_duration": 60,
             "rotation_length": 4
         }
     },
-    "Colors":{
+    "Colors": {
         "Black": "#000000",
         "Gray": "#7f7f7f",
         "White": "#fefefe",
@@ -83,5 +83,4 @@
         "Middle-Pink": "#f25bef",
         "Top-Pink": "#fdb2ff"
     }
-  }
-  
+}
